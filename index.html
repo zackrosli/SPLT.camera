@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPLT Capture Module</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #eef2f7;
+  color: #111827;
+}
+
+.header {
+  background: #0f766e;
+  color: white;
+  padding: 16px;
+  text-align: center;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.header p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.container {
+  max-width: 520px;
+  margin: auto;
+  padding: 12px;
+}
+
+.card {
+  background: white;
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.camera-box {
+  position: relative;
+  background: black;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+}
+
+.grid div {
+  border: 1px solid rgba(255,255,255,0.22);
+}
+
+.crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 58px;
+  height: 58px;
+  transform: translate(-50%, -50%);
+}
+
+.crosshair::before,
+.crosshair::after {
+  content: "";
+  position: absolute;
+  background: red;
+}
+
+.crosshair::before {
+  width: 100%;
+  height: 2px;
+  top: 50%;
+  left: 0;
+}
+
+.crosshair::after {
+  width: 2px;
+  height: 100%;
+  left: 50%;
+  top: 0;
+}
+
+.target-circle {
+  position: absolute;
+  width: 76%;
+  aspect-ratio: 1 / 1;
+  border: 4px dashed #22d3ee;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.guide-text {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.65);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-primary {
+  flex: 1;
+  background: #0f766e;
+  color: white;
+}
+
+.btn-secondary {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.btn-danger {
+  background: #b91c1c;
+  color: white;
+}
+
+.btn-upload {
+  width: 100%;
+  background: #16a34a;
+  color: white;
+  margin-top: 12px;
+}
+
+.btn-upload:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.thumb {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f1f5f9;
+  border: 2px dashed #cbd5e1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.thumb .num {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: rgba(0,0,0,0.65);
+  color: white;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+
+.thumb .delete {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  background: #dc2626;
+  color: white;
+  border: none;
+  font-size: 11px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  padding: 0;
+}
+
+.status {
+  font-size: 14px;
+  margin-top: 8px;
+  color: #374151;
+}
+
+.success-text {
+  color: #15803d;
+  font-weight: bold;
+}
+
+.warning-text {
+  color: #b45309;
+  font-weight: bold;
+}
+
+.hidden-canvas {
+  display: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <h2>SPLT Capture Module</h2>
+  <p>Modul tangkap gambar sasaran</p>
+</div>
+
+<div class="container">
+
+  <div class="card">
+    <div class="info-row">
+      <span>Acara</span>
+      <b id="eventName">Latihan Tembak</b>
+    </div>
+
+    <div class="info-row">
+      <span>Jumlah Target</span>
+      <b><span id="countText">0</span> / 10</b>
+    </div>
+
+    <div class="status" id="statusText">
+      Sila buka kamera dan tangkap gambar target.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="camera-box">
+      <video id="video" autoplay muted playsinline></video>
+
+      <div class="overlay">
+        <div class="grid">
+          <div></div><div></div><div></div>
+          <div></div><div></div><div></div>
+          <div></div><div></div><div></div>
+        </div>
+
+        <div class="target-circle"></div>
+        <div class="crosshair"></div>
+
+        <div class="guide-text">
+          Align target dalam bulatan
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn-primary" onclick="captureImage()">Tangkap Gambar</button>
+      <button class="btn-secondary" onclick="startCamera()">Buka Kamera</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Preview Target</h3>
+    <div class="gallery" id="gallery"></div>
+
+    <button id="uploadBtn" class="btn-upload" onclick="uploadBatch()" disabled>
+      Upload Semua Target
+    </button>
+
+    <button class="btn-danger" style="width:100%; margin-top:8px;" onclick="clearAll()">
+      Kosongkan Semua
+    </button>
+  </div>
+
+</div>
+
+<canvas id="captureCanvas" class="hidden-canvas"></canvas>
+
+<script>
+const MAX_TARGET = 10;
+const MAX_WIDTH = 1600;
+const JPEG_QUALITY = 0.72;
+
+let capturedImages = [];
+
+const video = document.getElementById("video");
+const canvas = document.getElementById("captureCanvas");
+const gallery = document.getElementById("gallery");
+const countText = document.getElementById("countText");
+const statusText = document.getElementById("statusText");
+const uploadBtn = document.getElementById("uploadBtn");
+
+window.onload = () => {
+  renderGallery();
+  startCamera();
+};
+
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: "environment",
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      },
+      audio: false
+    });
+
+    video.srcObject = stream;
+    statusText.innerHTML = "Kamera aktif. Pastikan target berada dalam bulatan.";
+  } catch (err) {
+    console.error(err);
+    statusText.innerHTML = "<span class='warning-text'>Gagal buka kamera. Sila benarkan camera permission.</span>";
+  }
+}
+
+function captureImage() {
+  if (capturedImages.length >= MAX_TARGET) {
+    alert("Maksimum 10 target sahaja.");
+    return;
+  }
+
+  if (!video.videoWidth || !video.videoHeight) {
+    alert("Kamera belum bersedia.");
+    return;
+  }
+
+  const originalWidth = video.videoWidth;
+  const originalHeight = video.videoHeight;
+
+  let newWidth = originalWidth;
+  let newHeight = originalHeight;
+
+  if (originalWidth > MAX_WIDTH) {
+    const ratio = MAX_WIDTH / originalWidth;
+    newWidth = MAX_WIDTH;
+    newHeight = Math.round(originalHeight * ratio);
+  }
+
+  canvas.width = newWidth;
+  canvas.height = newHeight;
+
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0, newWidth, newHeight);
+
+  const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+
+  capturedImages.push({
+    targetNo: capturedImages.length + 1,
+    imageData: dataUrl,
+    createdAt: new Date().toISOString()
+  });
+
+  renderGallery();
+
+  statusText.innerHTML = `<span class="success-text">Target ${capturedImages.length} berjaya ditangkap.</span>`;
+}
+
+function renderGallery() {
+  gallery.innerHTML = "";
+
+  for (let i = 0; i < MAX_TARGET; i++) {
+    const item = capturedImages[i];
+
+    const div = document.createElement("div");
+    div.className = "thumb";
+
+    if (item) {
+      div.innerHTML = `
+        <img src="${item.imageData}">
+        <span class="num">${item.targetNo}</span>
+        <button class="delete" onclick="deleteImage(${i})">×</button>
+      `;
+    } else {
+      div.innerHTML = `${i + 1}`;
+    }
+
+    gallery.appendChild(div);
+  }
+
+  countText.innerText = capturedImages.length;
+
+  uploadBtn.disabled = capturedImages.length !== MAX_TARGET;
+
+  if (capturedImages.length === MAX_TARGET) {
+    statusText.innerHTML = "<span class='success-text'>10 target lengkap. Boleh upload semua target.</span>";
+  }
+}
+
+function deleteImage(index) {
+  capturedImages.splice(index, 1);
+
+  capturedImages = capturedImages.map((img, i) => ({
+    ...img,
+    targetNo: i + 1
+  }));
+
+  renderGallery();
+  statusText.innerHTML = "Gambar dibuang. Sila tambah semula jika perlu.";
+}
+
+function clearAll() {
+  if (!confirm("Kosongkan semua gambar?")) return;
+
+  capturedImages = [];
+  renderGallery();
+  statusText.innerHTML = "Semua gambar dikosongkan.";
+}
+
+function uploadBatch() {
+  if (capturedImages.length !== MAX_TARGET) {
+    alert("Sila lengkapkan 10 gambar target dahulu.");
+    return;
+  }
+
+  const batchData = {
+    eventName: document.getElementById("eventName").innerText,
+    totalTarget: MAX_TARGET,
+    images: capturedImages
+  };
+
+  localStorage.setItem("splt_capture_batch", JSON.stringify(batchData));
+
+  statusText.innerHTML = "<span class='success-text'>Batch disimpan sementara. Sedia dihantar ke review module.</span>";
+
+  alert("10 gambar berjaya disimpan sementara. Nanti data ini boleh dihantar ke module review/admin.");
+}
+</script>
+
+</body>
+</html>
