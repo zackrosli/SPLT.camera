@@ -130,6 +130,26 @@ video {
   transform: translate(-50%, -50%);
 }
 
+  .safe-frame {
+  position: absolute;
+  width: 88%;
+  height: 88%;
+  border: 3px dashed rgba(255,255,255,0.7);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 18px;
+}
+
+.horizon-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: rgba(0,255,0,0.75);
+  top: 50%;
+  left: 0;
+}
+
 .guide-text {
   position: absolute;
   bottom: 12px;
@@ -296,6 +316,8 @@ button {
 
         <div class="target-circle"></div>
         <div class="crosshair"></div>
+        <div class="safe-frame"></div>
+<div class="horizon-line"></div>
 
         <div class="guide-text">
           Align target dalam bulatan
